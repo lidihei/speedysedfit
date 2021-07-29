@@ -1,3 +1,0 @@
-speedysedfit setup TYC3340-2437-1 -grid binary --phot
-speedysedfit fit TYC3340-2437-1_setup_binary.yaml --noplot 
-
