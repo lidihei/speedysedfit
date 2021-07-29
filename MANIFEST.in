@@ -1,0 +1,4 @@
+include speedysedfit/tap_cats_phot.cfg
+include speedysedfit/vizier_cats_phot.cfg
+include speedysedfit/zeropoints.dat
+include speedysedfit/redlaws/*.red

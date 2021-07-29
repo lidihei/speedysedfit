@@ -1,0 +1,43 @@
+
+# photometry file with index to the columns containing the photbands, observations and errors
+objectname: TYC3340-2437-1
+photometryfile: TYC3340-2437-1.phot
+photband_index: band
+obs_index: flux
+err_index: eflux
+photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']
+# parameters to fit and the limits on them in same order as parameters
+pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
+limits:
+- [28000, 32000]
+- [3.5, 4.2]
+- [8, 15]
+- [20000, 28000]
+- [2, 7]
+- [3.5, 5]
+- [1, 1.6]
+# constraints on distance and mass ratio if known
+constraints: 
+  parallax: [0.332, 0.0177]
+# added constraints on derived properties as mass, luminosity, luminosity ratio
+derived_limits: {}
+# path to the model grids with integrated photometry
+grids: 
+- kurucz
+- kurucz
+# setup for the MCMC algorithm
+nwalkers: 100    # total number of walkers
+nsteps: 500     # steps taken by each walker (not including burn-in)
+nrelax: 250      # burn-in steps taken by each walker
+a: 10            # relative size of the steps taken
+# set the percentiles for the error determination 
+percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
+# output options
+resultfile: TYC3340-2437-1_results_binary.csv   # filepath to write results
+plot1:
+ type: sed_fit
+ path: TYC3340-2437-1_sed_binary.png
+plot2:
+ type: distribution
+ path: TYC3340-2437-1_distribution_binary.png
+ parameters: ['teff', 'rad', 'teff2', 'rad2', 'ebv', 'd']

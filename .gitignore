@@ -1,0 +1,20 @@
+.settings/
+
+# Executables
+*.swp
+*.air
+*.ipa
+*.apk
+
+data/*
+ipynb/.ipynb_checkpoints
+ipynb/model
+ipynb/chains
+ipynb/TYC3340-2437-1
+*.pdf
+*.egg-info
+<<<<<<< HEAD
+cofig/*
+=======
+config/*
+>>>>>>> 244dcea6b9e6c18e0668a6dacb1b55649f33a5bb
