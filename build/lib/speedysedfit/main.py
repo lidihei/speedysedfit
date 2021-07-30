@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import pylab as pl
 import corner
+import os
 
 from astropy.io import ascii
 
@@ -303,12 +304,263 @@ def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, 
             if not setup[pindex].get('path', None) is None:
                 pl.savefig(setup[pindex].get('path', 'distribution.png'))
 
+#------------------------modified by lijiao------------------------------------------
+def fit_sed_parameters(setup, photbands, obs, obs_err):
+
+    # -- pars limits
+    pnames = setup['pnames']
+    limits = np.array(setup['limits'])
+
+    # check if the number of parameters and limits match up.
+    assert len(pnames) == len(limits), \
+        f"The number of parameters fitted has to match the provided limits. Received: \n{len(pnames)} " \
+        f"pnames: {pnames} \n and \n{len(limits)} limits: {limits}"
+
+    # -- pars constraints
+    constraints = setup['constraints']
+    for con, val in list(constraints.items()):
+        if len(val) == 2:
+            constraints[con] = [val[0], val[1], val[1]]
+
+    if 'parallax' in constraints:
+        p, pm, pp = constraints.pop('parallax')
+        constraints['distance'] = [1000. / p, 1000. * pm / p ** 2, 1000. * pp / p ** 2]
+
+    print("Applied constraints: ")
+    for con, val in list(constraints.items()):
+        print("\t {} = {} - {} + {}".format(con, val[0], val[1], val[2]))
+
+    if 'distance' in constraints:
+        # convert pc to Rsol
+        constraints['distance'] = [44365810.04823812 * constraints['distance'][0],
+                                   44365810.04823812 * constraints['distance'][1],
+                                   44365810.04823812 * constraints['distance'][2], ]
+
+    # -- pars limits on derived properties
+    derived_limits = setup['derived_limits']
+
+    # -- pars grid
+    gridnames = setup['grids']
+    grids = model.load_grids(gridnames, pnames, limits, photbands)
+
+    # -- switch logg to g for a binary system
+    if 'q' in constraints:
+        if 'logg' in pnames:
+            limits[pnames.index('logg')] = 10 ** limits[pnames.index('logg')]
+            pnames[pnames.index('logg')] = 'g'
+
+        if 'logg2' in pnames:
+            limits[pnames.index('logg2')] = 10 ** limits[pnames.index('logg2')]
+            pnames[pnames.index('logg2')] = 'g2'
+
+        if 'logg' in constraints:
+            g = 10 ** constraints['logg'][0]
+            g_el = g * constraints['logg'][1] * np.log(10)
+            g_eu = g * constraints['logg'][2] * np.log(10)
+            constraints['g'] = [g, g_el, g_eu]
+
+        if 'logg2' in constraints:
+            g = 10 ** constraints['logg2'][0]
+            g_el = g * constraints['logg2'][1] * np.log(10)
+            g_eu = g * constraints['logg2'][2] * np.log(10)
+            constraints['g2'] = [g, g_el, g_eu]
+
+    # -- check for variables that are kept fixed
+    fixed = np.where(limits[:, 0] == limits[:, 1])
+    varied = np.where(limits[:, 0] != limits[:, 1])
+
+    pnames = np.array(pnames)
+    fixed_variables = {}
+    for par, val in zip(pnames[fixed], limits[:, 0][fixed]):
+        fixed_variables[par] = val
+
+    pnames = list(pnames[varied])
+    limits = limits[varied]
+
+    # -- pars mcmc setup
+    nwalkers = setup.get('nwalkers', 100)
+    nsteps = setup.get('nsteps', 2000)
+    nrelax = setup.get('nrelax', 500)
+    a = setup.get('a', 10)
+
+    # -- MCMC
+    results, samples = mcmc.MCMC(obs, obs_err, photbands,
+                                 pnames, limits, grids,
+                                 fixed_variables=fixed_variables,
+                                 constraints=constraints, derived_limits=derived_limits,
+                                 nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
+                                 a=a)
+
+    # -- add fixed variables to results dictionary
+    for par, val in list(fixed_variables.items()):
+        results[par] = [val, val, 0, 0]
+
+    # -- deal with the switch back to logg
+    if 'g' in samples.dtype.names:
+        samples = append_fields(samples, 'logg', np.log10(samples['g']), usemask=False)
+
+    if 'g' in results:
+        results['logg'] = np.log10(results['g'])
+        results.pop('g')
+
+    if 'g2' in samples.dtype.names:
+        samples = append_fields(samples, 'logg2', np.log10(samples['g2']), usemask=False)
+
+    if 'g2' in results:
+        results['logg2'] = np.log10(results['g2'])
+        results.pop('g2')
+
+    _ = constraints.pop('g', None)
+    _ = constraints.pop('g2', None)
+
+    names = list(samples.dtype.names)
+    if 'g' in names: names.remove('g')
+    if 'g2' in names: names.remove('g2')
+    samples = samples[names]
+
+    percentiles = setup.get('percentiles', [16, 50, 84])
+    pc = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), percentiles, axis=0)
+    pars = {}
+    for p, v, e1, e2 in zip(samples.dtype.names, pc[1], pc[1] - pc[0], pc[2] - pc[1]):
+        results[p] = [results[p], v, e1, e2]
+        pars[p] = v
+
+    return results, samples, constraints, gridnames
+
+
+# create setup file by using parameters of catalog
+def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=None, logg1_err=None,
+                               teff2 = None, teff2_err=None, logg2=None, logg2_err=None,
+                               grids=['kurucze', 'tmp'], ebv= [0, 2],
+                               binary=True, parallax=True, photometry=True, direout='./'):
+    '''create setup file by using parameters estimated by spectrum
+    object_name: [str] e.g. LAN11 or J060030.98+290855.06
+    teff1: [float] the effective temperature of star1 of a binary system
+    teff1_err: [float]
+    logg1: [float]
+    logg1_err: [float]
+    teff2: [float] the effective temperature of star2 of a binary system
+    teff2_err: [float]
+    logg2: [float]
+    logg2_err: [float]
+    grids: [list] the SED grid used to fit sed
+    ebv: [list] 
+    binary: [bool] if True, fit with bianary model, else a star
+    parallax: [bool] if True, download parallax calibrated by zeropoint
+    direout: [stri] output directory
+    '''
+    _grid = 'binary' if binary else grids[0]
+   
+    # check or mkdir output directory
+    _direout = os.path.join(direout, object_name)
+    if not os.path.exists(_direout):
+       os.makedirs(_direout)
+    filename = os.path.join(_direout, "{}_setup_{}.yaml".format(object_name, _grid))
+
+    # excluded photometry
+    if _grid == 'munari':
+        photband_exclude = "['GALEX', 'SDSS', 'WISE']"
+    else:
+        photband_exclude = "['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']"
+
+    # parameter ranges
+    if not binary: 
+        ranges = model.get_grid_ranges(grid=grids[0])
+        ranges['ebv'] = ebv
+
+        parameter_limits = ""
+        for par in ['teff', 'logg', 'rad', 'ebv']:
+            parameter_limits += "\n- [{}, {}]".format(ranges[par][0], ranges[par][1])
+    else:
+        parameter_limits = "\n- [3500, 10000] \n- [4.31, 4.31] \n- [0.01, 2.5] \n"\
+                     "- [20000, 50000] \n- [5.8, 5.8] \n- [0.01, 0.5] \n- [0, 0.10]"
+
+    # constraints
+    constraints = "{}"
+    if parallax:
+        plx, e_plx = photometry_query.get_parallax(object_name)
+        if plx is not None and e_plx is not None:
+            constraints = "\n  parallax: [{:0.4f}, {:0.4f}]".format(plx, e_plx)
+    if teff1 is not None:
+       if teff1_err is None: teff1_err = 100
+       constraints += "\n  teff: [{:0.4f}, {:0.4f}]".format(teff1, teff1_err)
+    if logg1 is not None:
+       if logg1_err is None: logg1_err = 0.02
+       constraints += "\n  logg: [{:0.2f}, {:0.2f}]".format(logg1, logg1_err)
+
+    if binary and (teff2 is not None):
+       if teff2_err is None: teff2_err = 100
+       constraints += "\n  teff2: [{:0.1f}, {:0.1f}]".format(teff1, teff1_err)
+    if binary and (logg2 is not None):
+       if logg2_err is None: logg2_err = 0.02
+       constraints += "\n  logg2: [{:0.2f}, {:0.2f}]".format(logg1, logg1_err)
+
+    # grids
+    if  binary:
+        model_grids =f"- {grids[0]}\n- {grids[1]}"
+        
+    else:
+        model_grids = "- {}".format(grids[0])
+
+    out = default_binary if binary else default_single
+    out = out.replace('<objectname>', object_name)
+    out = out.replace('<photfilename>', object_name + '.phot')
+    out = out.replace('<photband_exclude>', photband_exclude)
+    out = out.replace('<parameter_limits>', parameter_limits)
+    out = out.replace('<constraints>', constraints)
+    out = out.replace('<model_grids>', model_grids)
+    out = out.replace('<postfix>', _grid)
+
+    ofile = open(filename, 'w')
+    ofile.write(out)
+    ofile.close()
+
+    if photometry:
+        filename_phot = os.path.join(_direout, object_name+'.phot')
+        photometry = photometry_query.get_photometry(object_name, filename=filename_phot)
+
+
+# perform fitting by using parameters of catalog
+def perform_fit_parameters(setup_file, noplot=True):
+    '''fit sed with parameters estimated by spectrum
+    setup_file: [str] e.g. LAN11_setup_kurucz.yaml
+    '''
+    # -- load the setup file
+    ifile = open(setup_file)
+    setup = yaml.safe_load(ifile)
+    ifile.close()
+    setup['photometryfile'] = os.path.join(os.path.dirname(setup_file), setup['photometryfile']) 
+
+    # -- obtain the observations
+    photbands, obs, obs_err = get_observations(setup)
+
+    # -- perform the SED fit
+    results, samples, constraints, gridnames = fit_sed_parameters(setup, photbands, obs, obs_err)
+
+    # -- write the results
+    write_results(setup, results, samples, obs, obs_err, photbands)
+
+    # -- create plots
+    if not noplot:
+       plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, photbands)
+
+    print("================================================================================")
+    print("")
+    print("Resulting parameter values and errors:")
+    print("   Par             Best        Pc       emin       emax")
+    for p in samples.dtype.names:
+        print("   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p])))
+
+    if not noplot:
+        pl.show()
+#------------------------modified by lijiao------------------------------------------
+
 
 # ====================================================================================================================
 # Command line stuff below.
 
 def create_setup(args):
-    object_name = args. object_name
+    object_name = args.object_name
     grid  = args.grid
     parallax = args.parallax
     photometry = args.photometry

@@ -31,12 +31,12 @@ v = Vizier(columns=["*", '+_r'])
 #-- read in catalog information
 viz_info = configparser.ConfigParser()
 viz_info.optionxform = str # make sure the options are case sensitive
-viz_info.readfp(open(filedir+'/vizier_cats_phot.cfg'))
+viz_info.read_file(open(filedir+'/vizier_cats_phot.cfg'))
 
 
 tap_info = configparser.ConfigParser()
 tap_info.optionxform = str # make sure the options are case sensitive
-tap_info.readfp(open(filedir+'/tap_cats_phot.cfg'))
+tap_info.read_file(open(filedir+'/tap_cats_phot.cfg'))
 
 
 def get_coordinate(objectname):
@@ -145,16 +145,29 @@ def tap_query_vo(ra, dec, catalog):
     deckw = tap_info.get(catalog, 'deckw') if tap_info.has_option(catalog, 'deckw') else 'dej2000'
 
     # -- first try to query with distance
-    query = """SELECT 
-         DISTANCE(POINT('ICRS', {rakw:}, {deckw}),
-                  POINT('ICRS', {ra:}, {dec:})) AS dist, {kws:}
-         FROM {table:} AS m
-         WHERE 
-            1=CONTAINS(POINT('ICRS', {rakw:}, {deckw}),
-                     CIRCLE('ICRS', {ra:}, {dec:}, 0.005 ))
-         ORDER BY dist""".format(ra=ra, dec=dec, table=table, rakw=rakw, deckw=deckw, kws=keywords)
+    try:
+        query = """SELECT 
+             DISTANCE(POINT('ICRS', {rakw:}, {deckw}),
+                      POINT('ICRS', {ra:}, {dec:})) AS dist, {kws:}
+             FROM {table:} AS m
+             WHERE 
+                1=CONTAINS(POINT('ICRS', {rakw:}, {deckw}),
+                         CIRCLE('ICRS', {ra:}, {dec:}, 0.005 ))
+             ORDER BY dist""".format(ra=ra, dec=dec, table=table, rakw=rakw, deckw=deckw, kws=keywords)
 
-    results = service.run_sync(query).to_table()
+        results = service.run_sync(query).to_table()
+    except Exception as e:
+        print("problem", e)
+
+        #-- not all catalogs accept a distance sorted query, we have to hope that the correct star is returned.
+        query = """SELECT {rakw:} as RA, {deckw} as DE, {kws:}
+      FROM {table:} AS m
+      WHERE 
+         1=CONTAINS(POINT('ICRS', {rakw:}, {deckw}),
+                  CIRCLE('ICRS', {ra:}, {dec:}, 0.005 ))
+      """.format(ra=ra, dec=dec, table=table, rakw=rakw, deckw=deckw, kws=keywords)
+
+        results = service.run_sync(query).to_table()
 
     if len(results) == 0:
         dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
@@ -293,8 +306,12 @@ def get_tap_photometry(ra, dec):
     photometry = np.array([], dtype=dtypes)
 
     for catalog in catalogs:
-
-        phot_ = tap_query_vo(ra, dec, catalog)
+        try:
+           phot_ = tap_query_vo(ra, dec, catalog)
+           #phot_ = tap_query(ra, dec, catalog)
+        except Exception as e:
+               print(f'error of {catalog}: ', e)
+               phot_ = np.array([], dtype=dtypes)
         photometry = np.hstack([photometry, phot_])
 
     return photometry
@@ -306,15 +323,15 @@ def get_photometry(objectname, filename=None):
     ra, dec = get_coordinate(objectname)
 
     #-- query tap catalogs
-    photometry = get_tap_photometry(ra, dec)
+    photometry_tap = get_tap_photometry(ra, dec)
 
     #-- query Vizier catalogs
     photometry_ = get_vizier_photometry("{} {}".format(ra, dec))
 
-    print(photometry)
+    print(photometry_tap)
     print(photometry_)
-
-    photometry = np.hstack([photometry, photometry_])
+    #photometry = photometry_ if (photometry_tap is None) else np.hstack([photometry_tap, photometry_])
+    photometry = np.hstack([photometry_tap, photometry_])
 
     #-- convert magnitudes to fluxes
     wave, flux, err = [], [], []

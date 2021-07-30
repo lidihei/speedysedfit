@@ -11,6 +11,7 @@ ipynb/.ipynb_checkpoints
 ipynb/model
 ipynb/chains
 ipynb/TYC3340-2437-1
+ipynb/Feige64
 *.pdf
 *.egg-info
 <<<<<<< HEAD

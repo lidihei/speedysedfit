@@ -23,7 +23,7 @@ nsteps: 1000     # steps taken by each walker (not including burn-in)
 nrelax: 250      # burn-in steps taken by each walker
 a: 10            # relative size of the steps taken
 # set the percentiles for the error determination 
-percentiles: [0.2, 50, 99.8] # 16 - 84 corresponds to 1 sigma
+percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
 # output options
 resultfile: <objectname>_results_<postfix>.csv   # filepath to write results
 plot1:
