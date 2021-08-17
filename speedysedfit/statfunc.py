@@ -300,7 +300,7 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
         scale, e_scale = 0, 0
     # -- we don't need to scale the colors, only the absolute fluxes
     chisq = np.where(colors, (syn - meas) ** 2 / e_meas ** 2, (syn * scale - meas) ** 2 / e_meas ** 2)
-
+    chisq = chisq/len(meas) # modified by lijiao
     # Then add Chi2 of derived properties as distance, mass ratio, ...
     # =================================================================
     derived_properties = kwargs.get('derived_properties', {})

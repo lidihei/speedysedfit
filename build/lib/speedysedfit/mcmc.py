@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.lib.recfunctions import merge_arrays
-
+from multiprocessing import Pool
+import time
 import emcee
 
 from . import statfunc, model, filters
@@ -72,6 +73,30 @@ def lnprior(theta, derived_properties, limits, **kwargs):
                 derived_properties[lim] > derived_limits[lim][1]:
             return -np.inf
 
+    #----- teff, logg, teff2, logg2 with gaussion distribution
+    constraints = kwargs['constraints'].copy()
+    if 'teff' in constraints:
+       teff, teffm, teffp = constraints['teff']
+       teffprior = np.where(theta[0]  < teff, (theta[0]  - teff) ** 2 / teffm ** 2, (theta[0] - teff) ** 2 / teffp ** 2)
+       #teffprior = -0.5 * (theta[0] - teff)**2/teffm**2
+    else: teffprior = 0
+    if 'logg' in constraints:
+       logg, loggm, loggp = constraints['logg']
+       loggprior = np.where(theta[1]  < logg, (theta[1]  - logg) ** 2 / loggm ** 2, (theta[1] - logg) ** 2 / loggp ** 2)
+       #loggprior = -0.5 * (theta[1] - logg)**2/loggm**2
+    else:loggprior = 0
+    if 'teff2' in constraints:
+       teff2, teff2m, teff2p = constraints['teff2']
+       teff2prior = np.where(theta[3]  < teff2, (theta[0]  - teff2) ** 2 / teff2m ** 2, (theta[0] - teff2) ** 2 / teff2p ** 2)
+       #teff2prior = -0.5 * (theta[3] - teff2)**2/teff2m**2
+    else:teff2prior=0
+    if 'logg2' in constraints:
+       logg2, logg2m, logg2p = constraints['logg2']
+       logg2prior = np.where(theta[4]  < logg2, (theta[0]  - logg2) ** 2 / logg2m ** 2, (theta[0] - logg2) ** 2 / logg2p ** 2)
+       #logg2prior = -0.5 * (theta[4] - logg2)**2/logg2m**2
+    else:logg2prior=0
+    logprior = -teffprior - loggprior - teff2prior - logg2prior
+
     return 0
 
 def lnprob(theta, y, yerr, limits, **kwargs):
@@ -128,8 +153,10 @@ def lnprob(theta, y, yerr, limits, **kwargs):
 def MCMC(obs, obs_err, photbands,
          pnames, limits, grids,
          fixed_variables={}, constraints={}, derived_limits={},
-         nwalkers=100, nsteps=1000, nrelax=150, a=10, pos=None):
-
+         nwalkers=100, nsteps=1000, nrelax=150, a=10, processes=1, pos=None):
+    '''
+    processes [int] the processes used to running emcee
+    '''
     #-- check which bands are colors
     colors = np.array([filters.is_color(photband) for photband in photbands], bool)
 
@@ -152,14 +179,20 @@ def MCMC(obs, obs_err, photbands,
 
     # TODO: storing the blobs as dictionary with dtype object and then later converting to recarray is inefficient.
     # This needs to be addressed: provide the correct dtypes here and let emcee directly store them in recarray
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a,
-                                    args=(obs, obs_err, limits), kwargs=kwargs, blobs_dtype=[('blob','O')])
+    with Pool(processes=processes) as pool:
+         print(f'processes = {processes}')
+         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a,
+                                         args=(obs, obs_err, limits), kwargs=kwargs, blobs_dtype=[('blob','O')], pool=pool)
 
-    #================
-    # MCMC part
+         #================
+         # MCMC part
 
-    #-- run the sampler, both burn in and actual run in one
-    sampler.run_mcmc(pos, nsteps+nrelax, progress=True)
+         #-- run the sampler, both burn in and actual run in one
+         start = time.time()
+         sampler.run_mcmc(pos, nsteps+nrelax, progress=True)
+         end = time.time()
+         multi_time = end - start
+         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
     #-- combine the results from the individual walkers discarding the burn in steps
     samples = sampler.get_chain(discard=nrelax, thin=1, flat=True)

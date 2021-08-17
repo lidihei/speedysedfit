@@ -305,7 +305,7 @@ def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, 
                 pl.savefig(setup[pindex].get('path', 'distribution.png'))
 
 #------------------------modified by lijiao------------------------------------------
-def fit_sed_parameters(setup, photbands, obs, obs_err):
+def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
 
     # -- pars limits
     pnames = setup['pnames']
@@ -389,7 +389,7 @@ def fit_sed_parameters(setup, photbands, obs, obs_err):
                                  fixed_variables=fixed_variables,
                                  constraints=constraints, derived_limits=derived_limits,
                                  nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
-                                 a=a)
+                                 a=a, processes=processes)
 
     # -- add fixed variables to results dictionary
     for par, val in list(fixed_variables.items()):
@@ -452,7 +452,8 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
     _grid = 'binary' if binary else grids[0]
    
     # check or mkdir output directory
-    _direout = os.path.join(direout, object_name)
+    #_direout = os.path.join(direout, object_name)
+    _direout = direout
     if not os.path.exists(_direout):
        os.makedirs(_direout)
     filename = os.path.join(_direout, "{}_setup_{}.yaml".format(object_name, _grid))
@@ -521,9 +522,10 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
 
 
 # perform fitting by using parameters of catalog
-def perform_fit_parameters(setup_file, noplot=True):
+def perform_fit_parameters(setup_file, processes=1, noplot=True):
     '''fit sed with parameters estimated by spectrum
     setup_file: [str] e.g. LAN11_setup_kurucz.yaml
+    processes: [int] the sub-processes used to running emcee
     '''
     # -- load the setup file
     ifile = open(setup_file)
@@ -535,7 +537,7 @@ def perform_fit_parameters(setup_file, noplot=True):
     photbands, obs, obs_err = get_observations(setup)
 
     # -- perform the SED fit
-    results, samples, constraints, gridnames = fit_sed_parameters(setup, photbands, obs, obs_err)
+    results, samples, constraints, gridnames = fit_sed_parameters(setup, photbands, obs, obs_err, processes=processes)
 
     # -- write the results
     write_results(setup, results, samples, obs, obs_err, photbands)
