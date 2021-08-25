@@ -148,7 +148,7 @@ def rotconv(xinput,yinput,epsilon, vsini, ppr=None):
 
 
   y = np.convolve(y,kernel,'valid')
-  print(xinput.size,x.size,y.size)
+  #print(xinput.size,x.size,y.size)
   edge = int(npoints/2)
   x = x[edge:-edge]
 

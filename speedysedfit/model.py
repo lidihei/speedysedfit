@@ -123,6 +123,9 @@ def get_grid_ranges(**kwargs):
          teff = (27500, 55000)
          logg = (3, 4.75)
          rad = (5, 30)
+    elif grid == 'comarcs': # modified by lijiao
+         teff = (2500, 5000)
+         logg = (-1, 5)
     else:
         raise ValueError('Grid name ({}) not recognized!'.format(grid))
 
