@@ -1,0 +1,43 @@
+
+# photometry file with index to the columns containing the photbands, observations and errors
+objectname: TYC1184-2330-1
+photometryfile: TYC1184-2330-1.phot
+photband_index: band
+obs_index: flux
+err_index: eflux
+photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']
+# parameters to fit and the limits on them in same order as parameters
+pnames: [teff, logg, rad, ebv]
+limits: 
+- [22000, 24000]
+- [3.1, 3.4]
+- [0.05, 5]
+- [0, 1]
+# constraints on distance and mass ratio is known
+constraints: 
+  parallax: [0.3065, 0.0459]
+  teff: [23000.0000, 100.0000]
+  logg: [3.25, 0.10]
+# added constraints on derived properties as mass, luminosity, luminosity ratio
+derived_limits: {}
+# path to the model grids with integrated photometry
+grids: 
+- kurucz
+# setup for the MCMC algorithm
+nwalkers: 100    # total number of walkers
+nsteps: 1000     # steps taken by each walker (not including burn-in)
+nrelax: 250      # burn-in steps taken by each walker
+a: 10            # relative size of the steps taken
+# set the percentiles for the error determination 
+percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
+# output options
+resultfile: TYC1184-2330-1_results_kurucz.csv   # filepath to write results
+plot1:
+ type: sed_fit
+ result: pc
+ path: TYC1184-2330-1_sed_kurucz.png
+plot2:
+ type: distribution
+ show_best: true
+ path: TYC1184-2330-1_distribution_kurucz.png
+ parameters: ['teff', 'rad', 'L', 'ebv', 'd', 'mass']
