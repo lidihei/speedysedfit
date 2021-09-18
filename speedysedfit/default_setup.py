@@ -9,7 +9,8 @@ err_index: eflux
 photband_exclude: <photband_exclude>
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, ebv]
-limits: <parameter_limits>
+limits: 
+<parameter_limits>
 # constraints on distance and mass ratio is known
 constraints: <constraints>
 # added constraints on derived properties as mass, luminosity, luminosity ratio
@@ -47,22 +48,15 @@ err_index: eflux
 photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
-limits:
-- [3500, 10000]
-- [4.31, 4.31]
-- [0.01, 2.5]
-- [20000, 80000]
-- [5.8, 5.8]
-- [0.01, 0.5]
-- [0, 0.10]
+limits: 
+<parameter_limits>
 # constraints on distance and mass ratio if known
 constraints: <constraints>
 # added constraints on derived properties as mass, luminosity, luminosity ratio
 derived_limits: {}
 # path to the model grids with integrated photometry
-grids: 
-- kurucz
-- tmap
+grids:
+<model_grids> 
 # setup for the MCMC algorithm
 nwalkers: 100    # total number of walkers
 nsteps: 500     # steps taken by each walker (not including burn-in)

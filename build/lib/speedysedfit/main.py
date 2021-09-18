@@ -432,6 +432,7 @@ def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
 def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=None, logg1_err=None,
                                teff2 = None, teff2_err=None, logg2=None, logg2_err=None,
                                grids=['kurucze', 'tmp'], ebv= [0, 2],
+                               parameter_limits = None,
                                binary=True, parallax=True, photometry=True, direout='./'):
     '''create setup file by using parameters estimated by spectrum
     object_name: [str] e.g. LAN11 or J060030.98+290855.06
@@ -445,6 +446,8 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
     logg2_err: [float]
     grids: [list] the SED grid used to fit sed
     ebv: [list] 
+    parameter_limits: [str] the limit of the parameters, e.g. for binary, parameter_limits = "- [3500, 10000] \n- [4.31, 4.31] \n- [0.01, 2.5] \n"\
+                                                                           "- [20000, 50000] \n- [5.8, 5.8] \n- [0.01, 0.5] \n- [0, 0.10]"
     binary: [bool] if True, fit with bianary model, else a star
     parallax: [bool] if True, download parallax calibrated by zeropoint
     direout: [stri] output directory
@@ -468,12 +471,13 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
     if not binary: 
         ranges = model.get_grid_ranges(grid=grids[0])
         ranges['ebv'] = ebv
-
-        parameter_limits = ""
-        for par in ['teff', 'logg', 'rad', 'ebv']:
-            parameter_limits += "\n- [{}, {}]".format(ranges[par][0], ranges[par][1])
+        if parameter_limits is None: 
+           parameter_limits = ""
+           for par in ['teff', 'logg', 'rad', 'ebv']:
+               parameter_limits += "- [{}, {}]".format(ranges[par][0], ranges[par][1])
     else:
-        parameter_limits = "\n- [3500, 10000] \n- [4.31, 4.31] \n- [0.01, 2.5] \n"\
+        if parameter_limits is None:
+           parameter_limits = "- [3500, 10000] \n- [4.31, 4.31] \n- [0.01, 2.5] \n"\
                      "- [20000, 50000] \n- [5.8, 5.8] \n- [0.01, 0.5] \n- [0, 0.10]"
 
     # constraints
