@@ -300,7 +300,7 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
         scale, e_scale = 0, 0
     # -- we don't need to scale the colors, only the absolute fluxes
     chisq = np.where(colors, (syn - meas) ** 2 / e_meas ** 2, (syn * scale - meas) ** 2 / e_meas ** 2)
-    chisq = chisq/len(meas) # modified by lijiao
+    #chisq = chisq/len(meas) # modified by lijiao
     # Then add Chi2 of derived properties as distance, mass ratio, ...
     # =================================================================
     derived_properties = kwargs.get('derived_properties', {})
@@ -308,9 +308,10 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
 
     for con, (c, c_m, c_p) in list(constraints.items()):
         syn_c = None
-        if con == 'distance' and sum(~colors) > 0:
+        if con == 'd' and sum(~colors) > 0:
             # distance can only be constrained if there is at least 1 absolute measurement
             c, c_m, c_p = 1. / c ** 2, 2. * c_m / c ** 3, 2. * c_p / c ** 3
+            #c, c_m, c_p = 1. /c, c_m / c**2,  c_p / c ** 2
             syn_c = scale
 
         elif con in pars:

@@ -15,7 +15,7 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
     """
     model_func = kwargs.pop('model_func', model.get_itable)
     stat_func = kwargs.pop('stat_func', statfunc.stat_chi2)
-    colors = kwargs.get('colors', np.array([False for i in y], bool))
+    colors = kwargs.get('colors', np.zeros(len(y), dtype=np.bool))
     constraints = kwargs.pop('constraints', {})
 
 
@@ -66,18 +66,25 @@ def lnprior(theta, derived_properties, limits, **kwargs):
     #-- check if all parameters are within their limits
     if any(theta < limits[:,0]) or any(theta > limits[:,1]):
         return -np.inf
+    else: return 0
 
     #-- check that all derived properties are within limits
     for lim in list(derived_limits.keys()):
         if derived_properties[lim] < derived_limits[lim][0] or \
                 derived_properties[lim] > derived_limits[lim][1]:
             return -np.inf
+    else: return 0
 
+    '''
     #----- teff, logg, teff2, logg2 with gaussion distribution
     constraints = kwargs['constraints'].copy()
+    logprior = 0
+    for _key in constraints.keys():
+       _mu, sigma_low, sigma_up = 
+        _logprior = 
     if 'teff' in constraints:
        teff, teffm, teffp = constraints['teff']
-       teffprior = np.where(theta[0]  < teff, (theta[0]  - teff) ** 2 / teffm ** 2, (theta[0] - teff) ** 2 / teffp ** 2)
+       teffprior = np.where(teff <= theta[0], (theta[0]  - teff) ** 2 / teffm ** 2, (theta[0] - teff) ** 2 / teffp ** 2)
        #teffprior = -0.5 * (theta[0] - teff)**2/teffm**2
     else: teffprior = 0
     if 'logg' in constraints:
@@ -96,8 +103,9 @@ def lnprior(theta, derived_properties, limits, **kwargs):
        #logg2prior = -0.5 * (theta[4] - logg2)**2/logg2m**2
     else:logg2prior=0
     logprior = -teffprior - loggprior - teff2prior - logg2prior
-
+    
     return 0
+    '''
 
 def lnprob(theta, y, yerr, limits, **kwargs):
     """

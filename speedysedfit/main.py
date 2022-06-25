@@ -113,17 +113,17 @@ def fit_sed(setup, photbands, obs, obs_err):
 
     if 'parallax' in constraints:
         p, pm, pp = constraints.pop('parallax')
-        constraints['distance'] = [1000. / p, 1000. * pm / p ** 2, 1000. * pp / p ** 2]
+        constraints['d'] = [1000. / p, 1000. * pm / p ** 2, 1000. * pp / p ** 2]
 
     print("Applied constraints: ")
     for con, val in list(constraints.items()):
         print("\t {} = {} - {} + {}".format(con, val[0], val[1], val[2]))
 
-    if 'distance' in constraints:
+    if 'd' in constraints:
         # convert pc to Rsol
-        constraints['distance'] = [44365810.04823812 * constraints['distance'][0],
-                                   44365810.04823812 * constraints['distance'][1],
-                                   44365810.04823812 * constraints['distance'][2], ]
+        constraints['d'] = [44365810.04823812 * constraints['d'][0],
+                            44365810.04823812 * constraints['d'][1],
+                            44365810.04823812 * constraints['d'][2], ]
 
     # -- pars limits on derived properties
     derived_limits = setup['derived_limits']
@@ -324,17 +324,17 @@ def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
 
     if 'parallax' in constraints:
         p, pm, pp = constraints.pop('parallax')
-        constraints['distance'] = [1000. / p, 1000. * pm / p ** 2, 1000. * pp / p ** 2]
+        constraints['d'] = [1000. / p, 1000. * pm / p ** 2, 1000. * pp / p ** 2]
 
     print("Applied constraints: ")
     for con, val in list(constraints.items()):
         print("\t {} = {} - {} + {}".format(con, val[0], val[1], val[2]))
 
-    if 'distance' in constraints:
+    if 'd' in constraints:
         # convert pc to Rsol
-        constraints['distance'] = [44365810.04823812 * constraints['distance'][0],
-                                   44365810.04823812 * constraints['distance'][1],
-                                   44365810.04823812 * constraints['distance'][2], ]
+        constraints['d'] = [44365810.04823812 * constraints['d'][0],
+                            44365810.04823812 * constraints['d'][1],
+                            44365810.04823812 * constraints['d'][2], ]
 
     # -- pars limits on derived properties
     derived_limits = setup['derived_limits']
