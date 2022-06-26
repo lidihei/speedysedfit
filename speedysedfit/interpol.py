@@ -41,7 +41,11 @@ def create_pixeltypegrid(grid_pars,grid_data):
       +------+------+
       |...   |...   |
       +------+------+
-   
+
+   >>> grid_pars = np.array([[ 1. ,  1. , 0.5], [ 2. ,  1. ,  -0.5]]).T  # grid_pars.shape = (x, N)
+   >>> grid_data = np.array([[ 5000. , 4.5], [ 6000 , 4.5]]).T   # grid_data.shape  = (y, N)
+   >>> axis_values, pixelgrid =  create_pixeltypegrid(grid_pars,grid_data)
+
    The resulting grid will be rectangular and complete. This means that every
    combination of unique values in grid_pars should exist. If this is not the
    case, a +inf value will be inserted in grid_data at all locations that are 
@@ -63,7 +67,7 @@ def create_pixeltypegrid(grid_pars,grid_data):
    axis_values = [uniques_[0] for uniques_ in uniques]
    unique_val_indices = [uniques_[1] for uniques_ in uniques]
    
-   data_dim = np.shape(grid_data)[0]
+   data_dim, data_size = np.shape(grid_data)
 
    par_dims   = [len(uv[0]) for uv in uniques]
 
@@ -75,9 +79,12 @@ def create_pixeltypegrid(grid_pars,grid_data):
    pixelgrid[pixelgrid==1] = np.inf
    
    # now populate the multiDgrid
-   indices = [uv[1] for uv in uniques]
-   pixelgrid[indices] = grid_data.T
-   
+   #indices = [uv[1] for uv in uniques]
+   #pixelgrid[indices] = grid_data.T
+   indices = np.array([uv[1] for uv in uniques])
+   for _i in np.arange(data_size):
+       pixelgrid[tuple(indices[:,_i])] = grid_data[:, _i]
+
    return axis_values, pixelgrid
 
 def interpolate(p, axis_values, pixelgrid):
@@ -101,7 +108,8 @@ def interpolate(p, axis_values, pixelgrid):
       +------+-----+-------+
       |...   |...  |...    |
       +------+-----+-------+
-      
+     
+   >>>  
    >>> p = np.array([[1.21, 1.3, 0.24], [1.57, 2.4, -0.15]])
    >>> interpolate(p, axis_values, pixelgrid)
    >>> some output
@@ -126,12 +134,12 @@ def interpolate(p, axis_values, pixelgrid):
    # lowest value, this is automatically done via searchsorted (it return 0)
    # for values higher up, we need to force it
    
-   p_ = []
-   for av_,val in zip(axis_values,p):
-      indices = np.searchsorted(av_,val)
-      indices[indices==len(av_)] = len(av_)-1
-      p_.append(indices)
-   
+   #p_ = []
+   #for av_,val in zip(axis_values,p):
+   #   indices = np.searchsorted(av_,val)
+   #   indices[indices==len(av_)] = len(av_)-1
+   #   p_.append(indices)
+   #
 
    #-- The type of p is changes to the same type as in axis_values to catch possible rounding errors
    #   when comparing float64 to float32.

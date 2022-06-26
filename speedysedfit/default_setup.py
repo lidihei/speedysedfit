@@ -11,6 +11,8 @@ photband_exclude: <photband_exclude>
 pnames: [teff, logg, rad, ebv]
 limits: 
 <parameter_limits>
+# variables used to interpolate the grid default [teff, logg, ebv]]
+variables: <variables>
 # constraints on distance and mass ratio is known
 constraints: <constraints>
 # added constraints on derived properties as mass, luminosity, luminosity ratio
@@ -50,6 +52,8 @@ photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']
 pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
 limits: 
 <parameter_limits>
+# variables used to interpolate the grid default [teff, logg, ebv]]
+variables: <variables>
 # constraints on distance and mass ratio if known
 constraints: <constraints>
 # added constraints on derived properties as mass, luminosity, luminosity ratio
@@ -91,6 +95,8 @@ limits:
 - [5.80, 5.80]
 - [0.01, 0.5]
 - [0, 0.10]
+# variables used to interpolate the grid default [teff, logg, ebv]]
+variables: <variables>
 # constraints on distance and mass ratio is known
 constraints: <constraints>
 # added constraints on derived properties as mass, luminosity, luminosity ratio

@@ -310,6 +310,7 @@ def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
     # -- pars limits
     pnames = setup['pnames']
     limits = np.array(setup['limits'])
+    variables=setup['variables']
 
     # check if the number of parameters and limits match up.
     assert len(pnames) == len(limits), \
@@ -341,7 +342,7 @@ def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
 
     # -- pars grid
     gridnames = setup['grids']
-    grids = model.load_grids(gridnames, pnames, limits, photbands)
+    grids = model.load_grids(gridnames, pnames, limits, photbands, variables=variables)
 
     # -- switch logg to g for a binary system
     if 'q' in constraints:
@@ -431,8 +432,8 @@ def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
 # create setup file by using parameters of catalog
 def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=None, logg1_err=None,
                                teff2 = None, teff2_err=None, logg2=None, logg2_err=None,
-                               grids=['kurucze', 'tmp'], ebv= [0, 2],
-                               parameter_limits = None,
+                               grids=['kurucze', 'tmp'], ebvrange= [0, 2], radrange=[0.01, 1],
+                               parameter_limits = None, variables = ['teff', 'logg', 'ebv'],
                                binary=True, parallax=True, photometry=True, direout='./'):
     '''create setup file by using parameters estimated by spectrum
     object_name: [str] e.g. LAN11 or J060030.98+290855.06
@@ -445,7 +446,8 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
     logg2: [float]
     logg2_err: [float]
     grids: [list] the SED grid used to fit sed
-    ebv: [list] 
+    ebvrange: [list] ranges of Ebv (redenning)
+    radrange: [list] ranges of stellar radius
     parameter_limits: [str] the limit of the parameters, e.g. for binary, 
           parameter_limits = "- [3500, 10000] \n- [4.31, 4.31] \n- [0.01, 2.5] \n
                               - [20000, 50000] \n- [5.8, 5.8] \n- [0.01, 0.5] \n- [0, 0.10]"
@@ -471,7 +473,8 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
     # parameter ranges
     if not binary: 
         ranges = model.get_grid_ranges(grid=grids[0])
-        ranges['ebv'] = ebv
+        ranges['ebv'] = ebvrange
+        ranges['rad'] = radrange
         if parameter_limits is None: 
            parameter_limits = ""
            for par in ['teff', 'logg', 'rad', 'ebv']:
@@ -501,6 +504,12 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
        if logg2_err is None: logg2_err = 0.02
        constraints += "\n  logg2: [{:0.2f}, {:0.2f}]".format(logg1, logg1_err)
 
+    # variables of interplating grid
+    #variables_ = ''
+    #for _ in variables:
+    #   variables_ += f' {_}'
+    variables_ = f'{variables}'
+
     # grids
     if  binary:
         model_grids =f"- {grids[0]}\n- {grids[1]}"
@@ -516,6 +525,7 @@ def create_setup_by_parameters(object_name, teff1=None, teff1_err=None, logg1=No
     out = out.replace('<constraints>', constraints)
     out = out.replace('<model_grids>', model_grids)
     out = out.replace('<postfix>', _grid)
+    out = out.replace('<variables>', variables_)
 
     ofile = open(filename, 'w')
     ofile.write(out)

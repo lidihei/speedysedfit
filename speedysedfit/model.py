@@ -158,7 +158,7 @@ def get_grid_dimensions(**kwargs):
     return teffs, loggs
 
 
-def load_grids(gridnames, pnames, limits, photbands):
+def load_grids(gridnames, pnames, limits, photbands, variables=['teff', 'logg', 'ebv']):
     """
     prepares the integrated photometry grid by loading the grid and cutting it to the size
     given in limits.
@@ -171,7 +171,7 @@ def load_grids(gridnames, pnames, limits, photbands):
                                                                      teffrange=limits[pnames.index('teff' + ind)],
                                                                      loggrange=limits[pnames.index('logg' + ind)],
                                                                      ebvrange=limits[pnames.index('ebv')],
-                                                                     variables=['teff', 'logg', 'ebv'])
+                                                                     variables=variables)
 
         grids.append([axis_values, pixelgrid])
 
