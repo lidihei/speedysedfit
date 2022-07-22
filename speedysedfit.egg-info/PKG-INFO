@@ -1,0 +1,30 @@
+Metadata-Version: 2.1
+Name: speedysedfit
+Version: 0.1.0
+Summary: MC approach to fit photometric SEDs
+Home-page: https://github.com/lidihei/speedysedfit
+Author: Jiao Li
+Author-email: lijiao@bao.ac.cn
+License: UNKNOWN
+Description: # Speedysedfit 
+        
+        Speedysedfit is modified from [speedyfit](https://github.com/vosjo/speedyfit) of Joris Vos 
+        
+        A python package to fit the photometric spectral energy distribution of stars. Uses a Markov chain Monte Carlo approach 
+        to determine the errors on the derived parameters.
+        
+        Speedyfit is a command line tool writen in Python 3 that allows you to search the most common online databases for 
+        photometric observations of your target, and fit theoretical atmosphere models to the obtained photometry. Speedyfit can
+        deal with both single and binary stars, and allows for the inclusion of constraints from other sources, as for example
+        the distance or reddening. 
+        
+        Installing speedysedfit, please look at ./ipynb/install_speedysedfit.ipynb
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering :: Astronomy
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown

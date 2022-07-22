@@ -8,11 +8,13 @@
 
 data/*
 ipynb/.ipynb_checkpoints
+ipynb/LAN11
 ipynb/model
 ipynb/chains
 ipynb/TYC3340-2437-1
 ipynb/Feige64
 ipynb/xiongjianping
+ipynb/LAN11
 *.pdf
 *.egg-info
 <<<<<<< HEAD

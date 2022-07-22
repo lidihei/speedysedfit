@@ -1,0 +1,46 @@
+
+# photometry file with index to the columns containing the photbands, observations and errors
+objectname: Lan_11
+photometryfile: Lan_11.phot
+photband_index: band
+obs_index: flux
+err_index: eflux
+photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']
+# parameters to fit and the limits on them in same order as parameters
+pnames: [teff, logg, rad, ebv]
+variables: [teff, logg, ebv]
+limits: 
+- [20000, 80000]
+- [5., 6.]
+- [0.01, 1]
+- [0, 2]
+
+# constraints on distance and mass ratio is known
+constraints: 
+  parallax: [1.1461, 0.0290]
+#  parallax: [1.1129, 0.0433]
+  teff: [35040.0000, 100.0000]
+  logg: [5.48, 0.023]
+# added constraints on derived properties as mass, luminosity, luminosity ratio
+derived_limits: {}
+# path to the model grids with integrated photometry
+grids: 
+- tmap
+# setup for the MCMC algorithm
+nwalkers: 100    # total number of walkers
+nsteps: 1000     # steps taken by each walker (not including burn-in)
+nrelax: 250      # burn-in steps taken by each walker
+a: 10            # relative size of the steps taken
+# set the percentiles for the error determination 
+percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
+# output options
+resultfile: Lan_11_results_tmap.csv   # filepath to write results
+plot1:
+ type: sed_fit
+ result: pc
+ path: Lan_11_sed_tmap.png
+plot2:
+ type: distribution
+ show_best: true
+ path: Lan_11_distribution_tmap.png
+ parameters: ['teff', 'rad', 'L', 'ebv', 'd', 'mass']
