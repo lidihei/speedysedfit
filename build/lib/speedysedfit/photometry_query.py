@@ -353,16 +353,56 @@ def get_photometry(objectname, filename=None):
     return photometry
 
 
-def get_parallax(objectname, radius=5):
-
+def get_parallax_bycoord(coord, radius=5, catalog='I/355/gaiadr3', **kwargs):
+    '''get parallax and its zero points from Gaia
+    from astropy.coordinates import SkyCoord
+    parameters:
+    -------------
+    coord: astropy.coordinates, e.g. coord  = SkyCoord(ra=90.1340960000, dec=29.1616380000, unit=(units.degree, units.degree), frame='icrs')
+    details see: from astroquery.vizier import Vizier; Vizier.query_region?
+    returns:
+    --------------
+    plx: plx=plx-zp
+    plx_e
+    zp
+    '''
     v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r', 'Gmag', 'nueff', 'pscol', 'ELAT', 'Solved'])
 
-    data = v_gaia.query_object(objectname, catalog=['I/350/gaiaedr3'], radius=radius*u.arcsec)
+    data = v_gaia.query_region(coord, catalog=catalog, radius=radius*u.arcsec)
 
     if len(data) == 0:
         return None, None
 
-    data = data['I/350/gaiaedr3'][0]
+    data = data[catalog][0]
+
+    plx, plx_e = data['Plx'], data['e_Plx']
+
+    if not data['pscol']:
+        data['pscol'] = 0
+
+    # apply parallax zero point correction of Lindgren. If not possible, use the average offset.
+    # https://arxiv.org/pdf/2012.01742.pdf
+    # https://gitlab.com/icc-ub/public/gaiadr3_zeropoint
+    try:
+        zp = zpt.get_zpt(data['Gmag'], data['nueff'], data['pscol'], data['ELAT'], data['Solved'])
+    except Exception:
+        warnings.warn("Could not calculate the parallax zero point offset based on Lindgren+2020, using average")
+        zp = 0.02
+    plx -= zp
+
+    return plx, plx_e, zp
+    
+
+def get_parallax(objectname, radius=5, catalog='I/355/gaiadr3'):
+
+    v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r', 'Gmag', 'nueff', 'pscol', 'ELAT', 'Solved'])
+
+    data = v_gaia.query_object(objectname, catalog=catalog, radius=radius*u.arcsec)
+
+    if len(data) == 0:
+        return None, None
+
+    data = data[catalog][0]
 
     plx, plx_e = data['Plx'], data['e_Plx']
 

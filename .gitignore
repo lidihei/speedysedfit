@@ -6,8 +6,10 @@
 *.ipa
 *.apk
 
+.gitignore
 data/*
 ipynb/.ipynb_checkpoints
+*ipynb/.ipynb
 ipynb/LAN11
 ipynb/model
 ipynb/chains
@@ -17,6 +19,8 @@ ipynb/xiongjianping
 ipynb/LAN11
 *.pdf
 *.egg-info
+dist
+build
 <<<<<<< HEAD
 cofig/*
 =======
