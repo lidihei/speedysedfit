@@ -368,7 +368,7 @@ def get_parallax_bycoord(coord, radius=5, catalog='I/355/gaiadr3', **kwargs):
     '''
     v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r', 'Gmag', 'nueff', 'pscol', 'ELAT', 'Solved'])
 
-    data = v_gaia.query_region(coord, catalog=catalog, radius=radius*u.arcsec)
+    data = v_gaia.query_region(coord, catalog=catalog, radius=radius*u.arcsec, **kwargs)
 
     if len(data) == 0:
         return None, None
@@ -400,7 +400,7 @@ def get_parallax(objectname, radius=5, catalog='I/355/gaiadr3'):
     data = v_gaia.query_object(objectname, catalog=catalog, radius=radius*u.arcsec)
 
     if len(data) == 0:
-        return None, None
+        return np.nan, np.nan, np.nan
 
     data = data[catalog][0]
 

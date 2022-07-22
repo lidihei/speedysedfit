@@ -1,4 +1,0 @@
-[console_scripts]
-speedysedfit = speedysedfit.main:main
-speedysedfit-batch = speedysedfit.speedyfit_batch:main
-
