@@ -136,6 +136,7 @@ def rotconv(xinput,yinput,epsilon, vsini, ppr=None):
   else:
     x = xinput
     y = yinput
+    step = np.log(xinput[1])-np.log(xinput[0])
 
   deltamax=vsini/clight
   npoints = 2*int(deltamax/step)+1
