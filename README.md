@@ -33,11 +33,11 @@ Installing speedysedfit, please look at ./ipynb/install_speedysedfit.ipynb
 - $ cd $SPEEDYFIT_MODELS
 - create or edit a file named grid_description.yaml which contains(TLUSTY and COMARCS grids should be created by youself):
 
-'''
-kurucz:
-    filename: 'kurucz93_z0.0_k2odfnew_sed'
-munari:
-    filename: 'Munari2005_extended'
+
+- kurucz:
+  -  filename: 'kurucz93_z0.0_k2odfnew_sed'
+- munari:
+  -  filename: 'Munari2005_extended'
 tmap:
     filename: 'TMAP2012_sdOB_extended'
 blackbody:
@@ -48,7 +48,7 @@ tlustyO:
     filename: 'TlustyO_G_v10'
 comarcs:
     filename: 'COMARCS'
-'''
+
 
 # Create [TLUSTY SED grid](creat_tlusty_sed_gride.ipynb) and [COMARCS SED grid](creat_comarcs_sed_gride.ipynb)
 
