@@ -52,4 +52,4 @@ comarcs:
 
 # Create [TLUSTY SED grid](creat_tlusty_sed_gride.ipynb) and [COMARCS SED grid](creat_comarcs_sed_gride.ipynb)
 
-If you want calculate and save Integrated TLUSTY and COMARCS grids, or get an your own integrated grid, you can look at [calc_integrated_grid.ipynb](calc_integrated_grid.ipynb)
+If you want calculate and save Integrated TLUSTY and COMARCS grids, or calculate a your own integrated grid, you can look at [calc_integrated_grid.ipynb](calc_integrated_grid.ipynb)
