@@ -1,11 +1,80 @@
 import glob
 import os
-
+from astropy import units
 import numpy as np
 
 from astropy.io import ascii, fits
 #basedir = os.path.dirname(__file__)
 basedir = os.path.join(os.environ.get('SPEEDYFIT_MODELS', None), '..')  # modified by lijiao
+
+
+def Portalsednv2lambda(Portalsed, filterpara='filter_parameters.fit'):
+    '''
+    Transform the frequence (nv) and flux_nv of the SED download from http://cdsportal.u-strasbg.fr/ to wave and flux_lambda
+    parameters:
+    ---------------
+    Portalsed: [astropy Tab] the SED downloaded from http://cdsportal.u-strasbg.fr/ 
+    filterpara: [str] the *.fit file which can be downloaded from http://vizier.u-strasbg.fr/viz-bin/VizieR-4 
+    returns:
+    ---------------
+    sed_lambda [array] in units of Angstrom
+    sed_flux_lambda [array] flux in units of erg/s/cm/cm/AA'
+    sed_eflux_lambda [array] flux error in units of erg/s/cm/cm/AA
+    '''
+    filterpara = fits.getdata(filterpara)
+    nsed = len(Portalsed)
+    sed = Portalsed
+    sed_flux_lambda = np.zeros(nsed)*np.nan
+    sed_eflux_lambda = np.zeros(nsed)*np.nan
+    sed_lambda = np.zeros(nsed)*np.nan
+    for i, sed_filter in enumerate(sed['sed_filter']): 
+         system, filteri = sed_filter.split(':')
+         ind_filter = (filterpara['system'] == system) & (filterpara['filter'] == filteri )
+         dlambda = filterpara[ind_filter]['dlambda']
+         dfreq = filterpara[ind_filter]['dfreq']
+         sed_flux = sed['sed_flux'][i]
+         sed_eflux = sed['sed_eflux'][i]
+         if np.sum(ind_filter) >0:
+            sed_lambda[i] =  filterpara[ind_filter]['lambda0'][0]
+            sed_flux_lambda[i] = sed_flux*dfreq/dlambda
+            sed_eflux_lambda[i] = sed_eflux*dfreq/dlambda
+    sed_lambda = sed_lambda*units.um
+    sed_flux_lambda = sed_flux_lambda*units.Jy*units.GHz/units.um
+    sed_eflux_lambda = sed_eflux_lambda*units.Jy*units.GHz/units.um
+    return sed_lambda.to('AA').value, sed_flux_lambda.to('erg/s/cm/cm/AA').value, sed_eflux_lambda.to('erg/s/cm/cm/AA').value
+
+
+def PortalsedJy2mag(Portalsed, filterpara='filter_parameters.fit'):
+    '''
+    transform the frequence (nv) and flux_nv of the SED download from http://cdsportal.u-strasbg.fr/ to wave and flux_lambda
+    parameters:
+    ---------------
+    Portalsed: [astropy Table] the SED downloaded from http://cdsportal.u-strasbg.fr/ 
+    filterpara: [str] the *.fit file which can be downloaded from http://vizier.u-strasbg.fr/viz-bin/VizieR-4 
+    returns:
+    ---------------
+    mag [array] magnitude
+    mag_err [array] magnitude error
+    '''
+    filterpara = fits.getdata(filterpara)
+    nsed = len(Portalsed)
+    sed =Portalsed
+    mag = np.zeros(nsed)*np.nan 
+    mag_e = np.zeros(nsed)*np.nan 
+    sed_lambda = np.zeros(nsed)*np.nan 
+    for i, sed_filter in enumerate(sed['sed_filter']): 
+         system, filteri = sed_filter.split(':')
+         ind_filter = (filterpara['system'] == system) & (filterpara['filter'] == filteri )
+         dlambda = filterpara[ind_filter]['dlambda']
+         dfreq = filterpara[ind_filter]['dfreq']
+         sed_flux = sed['sed_flux'][i]
+         sed_eflux = sed['sed_eflux'][i]
+         Fmag0 =  filterpara[ind_filter]['Fmag0']
+         if np.sum(ind_filter) >0:
+            mag[i] = -2.5*np.log10(sed_flux/Fmag0[0])
+         mag_e[i] = 2.5*sed_eflux/sed_flux/np.log(10)
+    return mag, mag_e
+
 
 def is_color(photband):
     """
