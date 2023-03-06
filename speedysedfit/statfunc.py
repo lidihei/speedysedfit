@@ -32,6 +32,9 @@ def get_derived_properties(**pars):
         mass = pars['g'] * (pars['rad'] * Rsol) ** 2 / GG
         derived_properties['mass'] = mass / Msol
 
+    if ('rr' in pars) and ('rad2' not in pars):
+       pars['rad2'] = pars['rad'] * pars['rr']
+
     if 'rad2' in pars and 'logg2' in pars:
         mass = 10 ** pars['logg2'] * (pars['rad2'] * Rsol) ** 2 / GG
         derived_properties['mass2'] = mass / Msol
