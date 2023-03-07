@@ -297,7 +297,6 @@ def get_itable(grid=[], **kwargs):
             kwargs_[par] = values[par + comp] if par + comp in values else values[par]
 
         f, L = get_itable_single(grid=grid, **kwargs_)
-
         fluxes.append(f)
         Labs['L' + comp] = np.sum(L, axis=0)
 

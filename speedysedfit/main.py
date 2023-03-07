@@ -379,10 +379,10 @@ def fit_sed_parameters(setup, photbands, obs, obs_err, processes=1):
     limits = limits[varied]
 
     # -- pars mcmc setup
-    nwalkers = setup.get('nwalkers', 100)
-    nsteps = setup.get('nsteps', 2000)
-    nrelax = setup.get('nrelax', 500)
-    a = setup.get('a', 10)
+    nwalkers = setup.get('nwalkers')
+    nsteps = setup.get('nsteps')
+    nrelax = setup.get('nrelax')
+    a = setup.get('a')
 
     # -- MCMC
     results, samples = mcmc.MCMC(obs, obs_err, photbands,

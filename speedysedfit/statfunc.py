@@ -79,11 +79,11 @@ def get_derived_properties(**pars):
         derived_properties['lr'] = l1 / l2
 
     # -- derive radius ratio
-    if 'rad' in pars and 'rad2' in pars:
-        derived_properties['rr'] = pars['rad'] / pars['rad2']
+    if 'rad' in pars and 'rad2' in pars and ('rr' not in pars):
+        derived_properties['rr'] = pars['rad2'] / pars['rad']
 
     if 'rad' in derived_properties and 'rad2' in derived_properties:
-        derived_properties['rr'] = derived_properties['rad'] / derived_properties['rad2']
+        derived_properties['rr'] = derived_properties['rad2'] / derived_properties['rad1']
 
     # -- add empty values for luminosity and distance to prevent problems with
     #   failed models
