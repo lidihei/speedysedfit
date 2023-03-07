@@ -2,7 +2,6 @@ import re
 import os
 import yaml
 import numpy as np
-
 from astropy.io import fits
 
 from speedysedfit import interpol, filters
@@ -84,6 +83,20 @@ def get_grid_file(integrated=False, **kwargs):
     directory = kwargs.get('directory', defaults['directory'])
 
     return directory + filename + '.fits'
+
+def get_regli_file(grid ='kurucz', **kwargs):
+    if os.path.isfile(grid):
+        return grid
+
+    if grid in grid_description:
+        filename = grid_description[grid]['filename']
+    else:
+        raise ValueError('Grid name ({}) not recognized!'.format(grid))
+
+    directory = kwargs.get('directory', defaults['directory'])
+    filename = f'{filename}_regli.z'
+    fname = os.path.join(directory, filename)
+    return fname
 
 
 def get_grid_ranges(**kwargs):
@@ -303,6 +316,72 @@ def get_itable(grid=[], **kwargs):
     fluxes = np.sum(fluxes, axis=0)
     return fluxes, Labs
 
+def get_flux_single(teff=None, logg=None, ebv=0.0, wave=None, **kwargs):
+    from regli import Regli
+    import joblib
+    gridname = kwargs['grid']
+    gridfilename = get_regli_file(grid=gridname)
+    dumpdic = joblib.load(gridfilename)
+    interpolater = dumpdic['interpolater']
+    wavelength = dumpdic['wavelength']
+    paras = [np.log10(teff), logg]
+    flux = interpolater.interpn(paras)
+    if wave is not None:
+       flux = np.interp(wave, wavelength, flux)
+    else:
+       wave = wavelength
+    # -- Take radius into account when provided
+    if 'rad' in kwargs:
+        rad = np.array(kwargs['rad'])
+        flux = flux * rad ** 2
+
+    if 'd' in kwargs:
+        d = np.array(kwargs['d'])
+        flux = flux / d ** 2
+    return wave, flux
+
+def get_flux(grid=[], **kwargs):
+    """
+   Returns the closest model atmosphere available in the grid. No interpolation is done!
+   """
+    values, parameters, components = {}, set(), set()
+    for key in list(kwargs.keys()):
+        if re.search("^(teff|logg|g|ebv|rad)\d?$", key):
+            par, comp = re.findall("^(teff|logg|g|ebv|rad)(\d?)$", key)[0]
+            values[key] = kwargs.pop(key)
+            parameters.add(par)
+            components.add(comp)
+
+    # need to check here that grid is same length as components
+    if hasattr(grid, '__iter__') and not isinstance(grid, str):
+        grids = grid
+    else:
+        grids = [grid]
+
+    # -- If there is only one component, we can directly return the result
+    if len(components) == 1:
+        kwargs.update(values)
+        wave, flux = get_flux_single(grid=grids[0], **kwargs)
+        return wave, flux
+
+    waves, fluxes = [], []
+    for i, (comp, grid) in enumerate(zip(components, grids)):
+        kwargs_ = kwargs.copy()
+        for par in parameters:
+            kwargs_[par] = values[par + comp] if par + comp in values else values[par]
+
+        w, f = get_flux_single(grid=grid, **kwargs_)
+
+        waves.append(w)
+        fluxes.append(f)
+
+    # -- interpolate and combine the models
+    wave = waves[0]
+    flux = np.zeros_like(wave)
+    for w, f in zip(waves, fluxes):
+        flux += np.interp(wave, w, f)
+
+    return wave, flux
 
 def get_table_single(teff=None, logg=None, ebv=0.0, **kwargs):
     """

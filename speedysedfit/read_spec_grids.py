@@ -3,14 +3,70 @@ from astropy.io import fits
 from astropy.table import Table
 import os
 import re
+from .model import get_grid_file
 
 class readspecgrids():
 
     def __init__(self):
        '''
-       read and dowload the model spectra, such as TLUSTY, ATLAS9 fluxes (Castelli flux grids); 
+       read and dowload the model spectra, such as TLUSTY, ATLAS9 fluxes (Castelli flux grids);
        obtain parameters table from file name
        '''
+
+    @staticmethod
+    def get_lam(R, lam_start, lam_end, N=3):
+        ''' get log10(lambda) with a proper sample interval
+        parameters:
+        ---------------
+        R: [float] spectral resolution (BFOSC: R ~ 1600)
+        lam_start: [float]: the start of wavelength
+        lam_end: [float]: the end of wavelength
+        N: [int] oversampling, (typical oversampling: N=3 --> 3pixel=FWHM)
+           R = lambda/FWHM --> (log10(lambda))' =1/(lambda*ln(10)) --> FWHM = 1/(R*ln(10))
+        returns:
+        wave: [array] in angstrom
+        '''
+        deltax = 1/R/N/np.log(10)
+        log10lam = np.arange(np.log10(lam_start), np.log10(lam_end), deltax)
+        return 10**log10lam
+
+    def creat_regli_for_interpolate(self, keys= ['TEFF', 'LOGG'],grid='tlustyO',  wavelength=None, verbose=True, fout=None):
+        ''' create a grid of relig for interpolating flux
+        grid [stri]: the grid name in the grid_description.yaml, e.g. 'tlustyO', 'kurucz', 'tmap'
+        note: transform the teff into log10(teff); some points might not be interpolated as the neigbor grids points are missed
+        returns:
+        interpolater
+
+        example:
+        flux = interpolater.interpn([np.log10(30618), 4])
+        '''
+        from regli import Regli
+        import joblib
+        gridfilename = get_grid_file(integrated=False, grid=grid)
+        if fout is None: fout = f'{gridfilename[:-5]}_regli.z'
+        hdus = fits.open(gridfilename)
+        N = len(hdus)-1
+        dim = len(keys)
+        parameters = np.zeros((N, dim))
+        if wavelength is None:
+           wave1 = hdus[1].data['wavelength']
+           wave_start, wave_end = np.min(wave1), np.max(wave1)
+           wavelength = self.get_lam(400, wave_start, wave_end, N=3)
+        fluxs = np.zeros((N, len( wavelength)))
+        for _i, hdu in enumerate(hdus[1:]):
+            fluxs[_i] = np.interp(wavelength, hdu.data['wavelength'], hdu.data['flux'], left=np.nan, right=np.nan,)
+            for _j, key in enumerate(keys):
+                parameters[_i, _j] = hdu.header[key]
+                if key == 'TEFF': parameters[_i, _j] = np.log10(parameters[_i, _j])
+        interpolater = Regli.init_from_flats(parameters, verbose= verbose)
+        interpolater.set_wave(wavelength)
+        interpolater.set_values(fluxs)
+        dumpdic = {'interpolater' : interpolater,
+                   'wavelength': wavelength,
+                   'code': os.path.abspath(__file__)
+                  }
+        joblib.dump(dumpdic, fout)
+        return interpolater
 
     def read_castelli_fluxgrids(self, fname):
         '''read the spectrum of Castelli flux grids (https://wwwuser.oats.inaf.it/castelli/grids.html)
