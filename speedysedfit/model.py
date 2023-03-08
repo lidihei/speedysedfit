@@ -84,7 +84,10 @@ def get_grid_file(integrated=False, **kwargs):
 
     return directory + filename + '.fits'
 
-def get_regli_file(grid ='kurucz', **kwargs):
+def get_regli_file(grid ='kurucz', logTeffgrid=False, **kwargs):
+    '''
+    if logTeffgrid is True: get the file name with the grid of log10(Teff)
+    '''
     if os.path.isfile(grid):
         return grid
 
@@ -94,7 +97,10 @@ def get_regli_file(grid ='kurucz', **kwargs):
         raise ValueError('Grid name ({}) not recognized!'.format(grid))
 
     directory = kwargs.get('directory', defaults['directory'])
-    filename = f'{filename}_regli.z'
+    if logTeffgrid:
+       filename = f'{filename}_regli_logTeffgrid.z'
+    else:
+       filename = f'{filename}_regli.z'
     fname = os.path.join(directory, filename)
     return fname
 
@@ -316,15 +322,16 @@ def get_itable(grid=[], **kwargs):
     fluxes = np.sum(fluxes, axis=0)
     return fluxes, Labs
 
-def get_flux_single(teff=None, logg=None, ebv=0.0, wave=None, **kwargs):
+def get_flux_single(teff=None, logg=None, ebv=0.0, wave=None, logTeffgrid=False, **kwargs):
     from regli import Regli
     import joblib
     gridname = kwargs['grid']
-    gridfilename = get_regli_file(grid=gridname)
+    gridfilename = get_regli_file(grid=gridname, logTeffgrid=logTeffgrid)
+    if logTeffgrid: teff = np.log10(teff)
     dumpdic = joblib.load(gridfilename)
     interpolater = dumpdic['interpolater']
     wavelength = dumpdic['wavelength']
-    paras = [np.log10(teff), logg]
+    paras = [teff, logg]
     flux = interpolater.interpn(paras)
     if wave is not None:
        flux = np.interp(wave, wavelength, flux)

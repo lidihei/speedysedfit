@@ -30,7 +30,7 @@ class readspecgrids():
         log10lam = np.arange(np.log10(lam_start), np.log10(lam_end), deltax)
         return 10**log10lam
 
-    def creat_regli_for_interpolate(self, keys= ['TEFF', 'LOGG'],grid='tlustyO',  wavelength=None, verbose=True, fout=None):
+    def creat_regli_for_interpolate(self, keys= ['TEFF', 'LOGG'],grid='tlustyO',  wavelength=None, verbose=True, fout=None, logTeffgrid=False):
         ''' create a grid of relig for interpolating flux
         grid [stri]: the grid name in the grid_description.yaml, e.g. 'tlustyO', 'kurucz', 'tmap'
         note: transform the teff into log10(teff); some points might not be interpolated as the neigbor grids points are missed
@@ -43,7 +43,10 @@ class readspecgrids():
         from regli import Regli
         import joblib
         gridfilename = get_grid_file(integrated=False, grid=grid)
-        if fout is None: fout = f'{gridfilename[:-5]}_regli.z'
+        if fout is None:
+           if logTeffgrid:
+                fout = f'{gridfilename[:-5]}_regli_logTeffgrid.z'
+           else: fout = f'{gridfilename[:-5]}_regli.z'
         hdus = fits.open(gridfilename)
         N = len(hdus)-1
         dim = len(keys)
@@ -57,7 +60,8 @@ class readspecgrids():
             fluxs[_i] = np.interp(wavelength, hdu.data['wavelength'], hdu.data['flux'], left=np.nan, right=np.nan,)
             for _j, key in enumerate(keys):
                 parameters[_i, _j] = hdu.header[key]
-                if key == 'TEFF': parameters[_i, _j] = np.log10(parameters[_i, _j])
+                if key == 'TEFF':
+                    if logTeffgrid: parameters[_i, _j] = np.log10(parameters[_i, _j])
         interpolater = Regli.init_from_flats(parameters, verbose= verbose)
         interpolater.set_wave(wavelength)
         interpolater.set_values(fluxs)
