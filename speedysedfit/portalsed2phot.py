@@ -54,7 +54,7 @@ class portalsed():
                 sed_lambda[i] =  filterpara[ind_filter]['lambda0'][0]
                 sed_flux_lambda[i] = sed_flux*dfreq/dlambda
                 sed_eflux_lambda[i] = sed_eflux*dfreq/dlambda
-                sed_dlambda[i] = dlambda*.1.e4
+                sed_dlambda[i] = dlambda*1.e4
                 sed_dfreq[i] = dfreq
         self.dlambda = sed_dlambda
         self.dfreq = sed_dfreq
