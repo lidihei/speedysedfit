@@ -104,10 +104,12 @@ def eff_wave(photband):
     """
 
     data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
-
-    s = np.where(data['photband'] == photband)
-
-    return data['eff_wave'][s][0]
+    try:
+       s = np.where(data['photband'] == photband)
+       lambda_eff = data['eff_wave'][s][0]
+    except:
+       lambda_eff = np.nan
+    return lambda_eff
 
 
 def mag2flux(mag, error, photband):
@@ -197,7 +199,7 @@ def Jy2mag(jy, jyerr, photband, filterpara=None):
     '''jy has to be provided in units of Jy
     '''
     if filterpara == None:
-       filterpara = fits.getdata(os.path.join(basedir, 'filter_parameters_2021.fit'))
+       filterpara = fits.getdata(os.path.join(basedir, 'portal_filter_parameters_2021.fit'))
     else:
        filterpara = filterpara
     mag, err = np.zeros_like(jy), np.zeros_like(jy)
