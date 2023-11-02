@@ -198,7 +198,7 @@ def flux2mag(flux, error, photband):
 def Jy2mag(jy, jyerr, photband, filterpara=None):
     '''jy has to be provided in units of Jy
     '''
-    if filterpara == None:
+    if filterpara is None:
        filterpara = fits.getdata(os.path.join(basedir, 'portal_filter_parameters_2021.fit'))
     else:
        filterpara = filterpara

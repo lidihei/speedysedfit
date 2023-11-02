@@ -1,6 +1,5 @@
 from astropy.table import Table, vstack, hstack
 import numpy as np
-from astropy import units
 from astropy.io import fits
 import os
 from .filters import Jy2mag, mag2flux, eff_wave
@@ -142,8 +141,6 @@ class portalsed():
             sed_lambda =  filterpara[ind_filter]['lambda0'][0]
             self._sys = _sys
             self._filter = _filter
-            #_band = f'{_sys}.{_filter}'
-            #bands.append(_band)
             if 'PAN-STARRS' in _sys:
                 _sys = 'PANSTARRS'
                 _filter = _filter.upper()
@@ -181,6 +178,7 @@ class portalsed():
             dfreqs.append(dfreq)
             lambdas.append(sed_lambda)
             tabs.append(tab[_i])
+            bands.append(f'{self._sys}.{self._filter}')
         mag, magerr = Jy2mag(jys, jyerrs,  bands, filterpara=filterpara)
         flux, err = mag2flux(mag, magerr, np.array(photbands))
         flux = flux*units.erg/units.s/units.A/units.cm**2
