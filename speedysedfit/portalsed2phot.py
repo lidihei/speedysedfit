@@ -196,6 +196,7 @@ class portalsed():
                           names = ['band', 'meas', 'emeas', 'unit', 'distance', 'tabname','flux', 'eflux'],
                           dtype = ['<U20', 'f8', 'f8', '<U10',  'f4', '<U20','f8','f8' ])
         if filename is not None:
+            from astropy.io import ascii
             ascii.write(photometry, filename, format='fixed_width', overwrite=True)
         lambdas = np.array(lambdas)*units.um
         dfreqs = np.array(dfreqs)*units.Hz
