@@ -528,4 +528,4 @@ photband               eff_wave type    zp_corr          Flam0      source
  WOOD.T2                    7126 CCD      -0.044    1.62584e-09     GCPD,use_only_for_colors!                                            
  WOOD.U                  3458.09 CCD       1.104    3.16971e-09     GCPD,use_only_for_colors!                                            
  WOOD.V                  4091.29 CCD      -0.202    7.29228e-09     GCPD,use_only_for_colors!                                            
- WOOD.Y                  5463.97 CCD      -0.063    3.63529e-09     GCPD,use_only_for_colors!                                            
+ WOOD.Y                  5463.97 CCD      -0.063    3.63529e-09     GCPD,use_only_for_colors!

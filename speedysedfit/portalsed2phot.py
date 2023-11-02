@@ -98,7 +98,8 @@ class portalsed():
 
     def portalsed2phot(self, ra, dec, tab_portsed,
                        radius=3/3600, filename=None,
-                       filterpara =None,
+                       filterpara =None, ra_key = '_RAJ2000', dec_key='_DEJ2000',
+                       tabfrom_key = '_tabname',
                        skipphotband=['Cousins.R', 'Cousins.U', 'Cousins.V', 'POSS-II.i', ]):
         '''
         parameters:
@@ -107,19 +108,20 @@ class portalsed():
         dec: [float]
         tab_portsed [Table] the SED downloaded from http://cdsportal.u-strasbg.fr/
         filterpara: [str] the *.fit file which can be downloaded from http://vizier.u-strasbg.fr/viz-bin/VizieR-4
+        tabfrom_key: [str] the table name from which the photometry is.
         radius: [float] in degree
         filename: [stri] file out name, if not None write a *.phot file of speedysedfit
         returns:
         tab
         '''
         from PyAstronomy import pyasl
-        if filterpara is None: filterpara = self.filterpara
+        filterpara = self.filterpara if filterpara is None else filterpara
         filterpara = fits.getdata(filterpara)
         photbands = []
         bands = []
         jys = []
         jyerrs = []
-        angdis = pyasl.getAngDist(ra, dec, tab_portsed['RAJ2000'], tab_portsed['DEJ2000'])
+        angdis = pyasl.getAngDist(ra, dec, tab_portsed[ra_key], tab_portsed[dec_key])
         ind = angdis <= radius
         tab = tab_portsed[ind]
         angdis = angdis[ind]*3600
@@ -163,7 +165,7 @@ class portalsed():
                 _filter = _filter.upper()
             elif '2MASS' in _sys:
                 _filter = _filter.upper()
-                if _filter is 'K': _filter = 'KS'
+                if _filter == 'K': _filter = 'KS'
             _photband = f'{_sys}.{_filter}'
             lambda_eff = eff_wave(_photband)
             if ~np.isfinite(lambda_eff):
@@ -173,7 +175,7 @@ class portalsed():
             photbands.append(_photband)
             jys.append(tab['sed_flux'][_i])
             jyerrs.append(tab['sed_eflux'][_i])
-            tabname.append(tab['tabname'][_i])
+            tabname.append(tab[tabfrom_key][_i])
             distance.append(angdis[_i])
             dlambdas.append(dlambda)
             dfreqs.append(dfreq)
@@ -181,6 +183,8 @@ class portalsed():
             tabs.append(tab[_i])
         mag, magerr = Jy2mag(jys, jyerrs,  bands, filterpara=filterpara)
         flux, err = mag2flux(mag, magerr, np.array(photbands))
+        flux = flux*units.erg/units.s/units.A/units.cm**2
+        err = err*units.erg/units.s/units.A/units.cm**2
         tab = vstack(tabs)
         dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'),
                   ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20'),
